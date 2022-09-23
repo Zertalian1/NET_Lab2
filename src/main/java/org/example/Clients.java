@@ -18,7 +18,7 @@ public class Clients {
     public void startClient(File file, String address, int port ) {
         try {
             try {
-                clientSocket = new Socket("localhost", port);
+                clientSocket = new Socket(address, port);
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
                 // достать из пути имя файла
@@ -29,7 +29,6 @@ public class Clients {
             } finally {
                 System.out.println("Клиент был закрыт...");
                 clientSocket.close();
-                in.close();
                 out.close();
             }
         } catch (IOException e) {
