@@ -3,6 +3,8 @@ package org.example;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Instant;
 
 public class ClientsConnection {
@@ -27,8 +29,8 @@ public class ClientsConnection {
         this.avg_rec_speed = avg_rec_speed;
     }
 
-    private BufferedReader in; // поток чтения из сокета
-    private BufferedWriter out; // поток записи в сокет
+    private final BufferedReader in; // поток чтения из сокета
+    private final BufferedWriter out; // поток записи в сокет
 
 
     public ClientsConnection(BufferedReader in, BufferedWriter out) {

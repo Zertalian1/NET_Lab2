@@ -1,7 +1,6 @@
 package org.example;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.Socket;
 
 //Клиенту передаётся в параметрах относительный или абсолютный путь к файлу, который нужно отправить.
@@ -42,25 +41,29 @@ public class Clients {
         BufferedReader readFile = new BufferedReader(new FileReader(file)); // ClientFileInfo:fileName:msgSize
         out.write("ClientFileInfo:" + file.getName() + ":" + file.length() + "\n");
         out.flush();
-        String line;
-        while ((line = readFile.readLine())!=null){
-            out.write(line+"\n");
+        char [] data = new char[1024];
+        while (readFile.read(data)!=-1){
+            out.write(data);
             out.flush();
+            for(int i = 0; i< 1024;i++){
+                data[i] = '\u0000';
+            }
         }
-        out.write("\n");
-        out.flush();
+        out.close();
+        readFile.close();
     }
 
     private void serverComm(File file){
         try {
             int sendAttempts = 0;
-            String serverAnswer;
+            String serverAnswer = null;
+            boolean isFileSent;
             do {
+                sendAttempts+=1;
                 System.out.println("Попытка отправить файл");
                 sendFile(file);
                 serverAnswer = in.readLine();
                 System.out.println(serverAnswer);
-                sendAttempts+=1;
             }while(serverAnswer.startsWith("failure") && sendAttempts<3);
             if(serverAnswer.equals("failure")){
                 System.out.println("Can't send file" + file.getName());
