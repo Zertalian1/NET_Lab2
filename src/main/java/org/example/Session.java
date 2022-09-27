@@ -18,7 +18,6 @@ public class Session implements Runnable{
         connection = new ClientsConnection(
                 new BufferedReader(new InputStreamReader(clientSocket.getInputStream())),
                 new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream())));
-        //System.out.println(connection.getIn().readLine());
     }
 
     @Override
@@ -28,16 +27,16 @@ public class Session implements Runnable{
         Thread clientReaderThread = new Thread(this::clientReader);
         System.out.println("Слушатель клиента запущен");
         clientReaderThread.start();
-        //printSpeedThread.start();
+        printSpeedThread.start();
         try {
             clientReaderThread.join();
             System.out.println("Соединение зарывается");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-           // printSpeedThread.interrupt();
+            printSpeedThread.interrupt();   // не интераптит
         }
-        //printAvgSpeed();
+        printAvgSpeed();
     }
 
     private void printAvgSpeed(){
@@ -62,7 +61,7 @@ public class Session implements Runnable{
             try {
                 try {
                     long fileSize=0;
-                    System.out.println("Ожмдание данных");
+                    System.out.println("Ожидание данных");
                     String header = connection.getIn().readLine();
                     if (header.startsWith("ClientFileInfo:")){
                         String [] parsedMsg = header.split(":");  // ClientFileInfo:fileName:msgSize
@@ -79,10 +78,11 @@ public class Session implements Runnable{
                         System.out.println(" Считывание данных");
                         char [] input = new char[BUFF_SIZE];
                         int isEnd = connection.getIn().read(input);
-                        int inputSize = getSize(input);
                         if(isEnd==-1){
                             break;
                         }
+                        int inputSize = getSize(input);
+                        calculateSpeed(begin, inputSize);
                         fileSize += inputSize;
                         if (writer != null) {
                             writer.write(input,0, inputSize);
@@ -98,14 +98,6 @@ public class Session implements Runnable{
                         throw new IOException();
                     }
                     clientWriter("success\n");
-                    if(begin!=null) {
-                        connection.setInst_rec_speed((double)fileSize / Duration.between(begin, clock.instant()).toMillis() * 1000);  // в секунду, добавить блокировку
-                        if(connection.getAvg_rec_speed() == 0){
-                            connection.setAvg_rec_speed(connection.getInst_rec_speed());
-                        }else {
-                            connection.setAvg_rec_speed((connection.getAvg_rec_speed() + connection.getInst_rec_speed()) / 2);
-                        }
-                    }
                 } catch (IOException e) {
                     clientWriter("failure\n");
                 }finally {
@@ -117,6 +109,17 @@ public class Session implements Runnable{
                 //return;
             }catch (IOException ignored){}
        // }
+    }
+
+    private void calculateSpeed(Instant begin, int inputSize){
+        if(begin!=null) {
+            connection.setInst_rec_speed((double)inputSize / Duration.between(begin, clock.instant()).toMillis() * 1000);  // в секунду, добавить блокировку
+            if(connection.getAvg_rec_speed() == 0){
+                connection.setAvg_rec_speed(connection.getInst_rec_speed());
+            }else {
+                connection.setAvg_rec_speed((connection.getAvg_rec_speed() + connection.getInst_rec_speed()) / 2);
+            }
+        }
     }
 
     public int getSize(char[] data){
@@ -134,7 +137,7 @@ public class Session implements Runnable{
         int i = 0;
         while (true){
             try{
-                File file = new File(".\\"+connection.getFileName()+i+".txt");
+                File file = new File(".\\input"+connection.getFileName()+i+".txt");
                 // поправить, чтобы был не абс путь
                 if (!file.createNewFile()){
                     i++;

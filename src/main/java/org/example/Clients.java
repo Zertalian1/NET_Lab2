@@ -21,15 +21,10 @@ public class Clients {
                 clientSocket = new Socket(address, port);
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-                // достать из пути имя файла
-                // считать файл в память или как - то иначе узнать его размер
-                // отправить файл, получить его ответ, если успех, то ?
-                //                                     если провал, то 3 отправки
                 serverComm(file);
             } finally {
                 System.out.println("Клиент был закрыт...");
                 clientSocket.close();
-                out.close();
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -56,7 +51,6 @@ public class Clients {
         try {
             int sendAttempts = 0;
             String serverAnswer = null;
-            boolean isFileSent;
             do {
                 sendAttempts+=1;
                 System.out.println("Попытка отправить файл");
@@ -64,6 +58,7 @@ public class Clients {
                 serverAnswer = in.readLine();
                 System.out.println(serverAnswer);
             }while(serverAnswer.startsWith("failure") && sendAttempts<3);
+            in.close();
             if(serverAnswer.equals("failure")){
                 System.out.println("Can't send file" + file.getName());
                 return;
